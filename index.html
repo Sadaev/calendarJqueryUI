@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="style.css" />
+        <link
+            rel="stylesheet"
+            href="./vendors/bootstrap-4.0.0-dist/css/bootstrap.css"
+        />
+        <!-- <link
+            rel="stylesheet"
+            href="./vendors/jquery-ui-1.12.1/jquery-ui-1.12.1/jquery-ui.css"
+        /> -->
+        <link
+            rel="stylesheet"
+            href="./vendors/jquery-ui-themes-1.12.1/jquery-ui-themes-1.12.1/jquery-ui.css"
+        />
+        <script src="./vendors/jqueri(3_5_1).js"></script>
+        <script src="./vendors/jquery-ui-1.12.1/jquery-ui-1.12.1/jquery-ui.js"></script>
+        <script src="./vendors/bootstrap-4.0.0-dist/js/bootstrap.bundle.js"></script>
+        <script src="vendors/moment.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="week-picker"></div>
+        </div>
+
+        <div
+            class="modal"
+            id="addDateModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="exampleModalCenterTitle"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLongTitle">
+                            Сохранить как праздничный день?
+                        </h5>
+                        <button
+                            type="button"
+                            class="close"
+                            data-dismiss="modal"
+                            aria-label="Close"
+                        >
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="currentDate" />
+                        <textarea
+                            id="commentForDay"
+                            cols="40"
+                            rows="5"
+                        ></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-dismiss="modal"
+                        >
+                            Назад
+                        </button>
+                        <button
+                            type="button"
+                            onClick="addToObject(this)"
+                            class="btn btn-primary"
+                        >
+                            Да
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <!-- <script type=text/javascript src="./testDate.json"></script> -->
+    <script type=text/javascript src="script.js"></script>
+    <script>
+        let getDate;
+        let json = $.getJSON("./testDate.json", (res) => {
+            getDate = res;
+        })
+        // console.log(testDate);
+        const newDates = {};
+
+        $(document).ready(function () {
+            $(".week-picker").datepicker({
+                minDate: 0,
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                beforeShowDay: (date) => {
+                    let isDayOff = ["ВС", "СБ"].includes(
+                        getWeekDay(moment(date))
+                    );
+                    let dateString = date.toLocaleDateString();
+                    // if (Object.keys(newDates).length === 0) {
+                    //    getDate[dateString] = {
+                    //         isHoliday: false,
+                    //         isDayOff: isDayOff,
+                    //         isWorkDay: !isDayOff,
+                    //         comment: "",
+                    //     };
+                    //     console.log("refresh");
+                    // } else {
+                    // }
+
+                    for (key in getDate) {
+                        if (key === dateString) {
+                            if (getDate[key].isHoliday)
+                                return [
+                                    true,
+                                    "highlight",
+                                   getDate[key].comment,
+                                ];
+                        }
+                    }
+                    return [true];
+                },
+                onSelect: function (dateText, inst) {
+                    var date = $(this).datepicker("getDate");
+                    $("#currentDate").val(date.getTime());
+
+                    if(getDate[date.toLocaleDateString()].isHoliday || getDate[date.toLocaleDateString()].isDayOff){
+                        $("#commentForDay").val(getDate[date.toLocaleDateString()].comment);
+                        let htmlBtn = `<button
+                            type="button"
+                            class="btn btn-danger"
+                            id="deleteDate"
+                            hidden
+                        >                        
+                            Удалить
+                        </button>`;
+                        $('#addDateModal div.modal-footer').html(htmlBtn);
+                    }else{
+                        $("#commentForDay").val("");
+                    }
+
+                    $("#addDateModal").modal("show");
+                },
+                numberOfMonths: [5, 3],
+            });
+        });
+        function addToObject(el) {
+            let timeStamp = +$("#currentDate").val();
+            let comment = $("#commentForDay").val();
+            console.log(comment);
+            let date = moment(timeStamp);
+            let holiday = true;
+            let output = ["ВС", "СБ"].includes(getWeekDay(date));
+            let dFormat = date.format("DD.MM.yyyy");
+
+            console.log(getDate[dFormat]);
+            getDate[dFormat].isHoliday = holiday;
+            getDate[dFormat].comment = comment;
+            console.log(getDate[dFormat]);
+
+            $("#addDateModal").modal("hide");
+            $(".week-picker").datepicker("refresh");
+        }
+        function getWeekDay(date) {
+            const days = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"];
+            return days[date.day()];
+        }
+
+        // $("#addDateModal").on("shown.bs.modal", (e) => {
+        //     $("#commentForDay").val("");
+        // });
+    </script>
+</html>
